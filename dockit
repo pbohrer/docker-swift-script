@@ -13,7 +13,7 @@ function usage() {
 		echo "Usage Error: $1"
 		echo ""
 	fi
-	echo "Usage: $0 [-h|-k|-o] {run <command>|build}"
+	echo "Usage: $0 [-h|-k|-o] {build | install | run <command>}"
 	echo "	-h : display options"
 	echo "	-p <port> : port to listen on both locally and in container (default=8090)"
 	echo "	-k : kill any other process listening on local port $port"
@@ -22,9 +22,32 @@ function usage() {
 	exit 0
 }
 
+#
+# Make sure Docker is installed
+#
+docker version > /dev/null 2> /dev/null
+status=$?
+
+if [ "$status" != "0" ]
+then
+	echo "Install docker on this machine to use this script."
+	sys=`uname -s`
+	dockerurl=https://docs.docker.com/engine/installation/
+	if [ "$sys" == "Darwin" ]
+	then
+		dockerurl=https://docs.docker.com/docker-for-mac/
+	fi
+	echo "Go to $dockerurl for more instructions."
+	open $dockerurl
+	exit
+fi
+
+#
+# Common way to run docker with passed in command to run
+#
 function run_docker() {
 	args="$@"
-	docker run --privileged --init --rm -i -t -v `pwd`:/root/app -w "/root/app" -p $port:$port swift-build $args
+	docker run -e "PORT=$port" --privileged --init --rm -i -t -v `pwd`:/root/app -w "/root/app" -p $port:$port swift-build $args
 }
 
 while getopts "okhp:" opt; do
@@ -42,19 +65,24 @@ done
 
 shift $((OPTIND-1))
 
-onport=`lsof -L -i:$port | grep LISTEN | sed 's/[^ ]* //' | sed 's/^ *//' | sed 's/ .*//'`
+if [ "$1" == "install" ]
+then
+	set -x
+	sudo ln -sf `pwd`/dockit /usr/local/bin/dockit
+	set +x
+	exit $?
+fi
+
+#onport=`lsof -L -i:$port | grep LISTEN | sed 's/[^ ]* //' | sed 's/^ *//' | sed 's/ .*//'`
+onport=`lsof -L -i:$port | grep LISTEN`
 
 # Check that no one is listening on our port
 if [ "$onport" != "" ]
 then
-	echo "Other process already listening on port $port"
-	if [ $killit -eq 1 ]
-	then
-		echo "Killing process"
-		kill -9 $onport
-	else
-		usage "Rerun with -k option to run (kill -9 $onport)"
-	fi
+	echo "Another process already listening on port $port"
+	echo "Either stop the following processes or override with the -p <port> option"
+	lsof -L -i:$port | grep LISTEN
+	exit 1
 fi
 
 if [ ! -e "Package.swift" ]
@@ -82,6 +110,8 @@ run)
 	if [ -f "./$command" ]
 	then
 		echo "Running $2 on Linux"
+		echo "  Note: Local port $port is mapping to port $port in container"
+		echo "	      Use -o option to open a browser session to this port or open manually"
 		run_docker $command
 	else
 		usage "<command> must point to a command within relative directory (default: $default_command)"
