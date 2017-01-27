@@ -45,7 +45,7 @@ fi
 #
 function run_docker() {
 	args="$@"
-	docker run -e "PORT=$port" --privileged --init --rm -i -t -v `pwd`:/root/app -w "/root/app" -p $port:$port swift-build $args
+	docker run -e "PORT=$port" --privileged --init --rm -i -t -v `pwd`:/root/app -w "/root/app" -p $port:$port ibmcom/swift-ubuntu $args
 }
 
 while getopts "okhp:" opt; do
@@ -65,6 +65,7 @@ if [ "$1" == "install" ]
 then
 	set -x
 	sudo ln -sf `pwd`/dockit /usr/local/bin/dockit
+	docker pull ibmcom/swift-ubuntu
 	set +x
 	exit $?
 fi
