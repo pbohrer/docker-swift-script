@@ -1,0 +1,101 @@
+#!/bin/bash
+
+OPTIND=1         # Reset in case getopts has been used previously in the shell.
+port=8090
+killit=0
+openbrowser=0
+run_command=$2
+default_command=".build/debug/${PWD##*/}"
+
+function usage() {
+	if [ "$1" != "" ] 
+	then
+		echo "Usage Error: $1"
+		echo ""
+	fi
+	echo "Usage: $0 [-h|-k|-o] {run <command>|build}"
+	echo "	-h : display options"
+	echo "	-p <port> : port to listen on both locally and in container (default=8090)"
+	echo "	-k : kill any other process listening on local port $port"
+	echo "	-o : open browser on localhost:$port"
+	echo "	     default <command> is $default_command"
+	exit 0
+}
+
+function run_docker() {
+	args="$@"
+	docker run --privileged --init --rm -i -t -v `pwd`:/root/app -w "/root/app" -p $port:$port swift-build $args
+}
+
+while getopts "okhp:" opt; do
+    case "$opt" in
+    o)  openbrowser=1
+        ;;
+    k)  killit=1
+        ;;
+    p)  port=$OPTARG
+        ;;
+    h)  usage
+        ;;
+    esac
+done
+
+shift $((OPTIND-1))
+
+onport=`lsof -L -i:$port | grep LISTEN | sed 's/[^ ]* //' | sed 's/^ *//' | sed 's/ .*//'`
+
+# Check that no one is listening on our port
+if [ "$onport" != "" ]
+then
+	echo "Other process already listening on port $port"
+	if [ $killit -eq 1 ]
+	then
+		echo "Killing process"
+		kill -9 $onport
+	else
+		usage "Rerun with -k option to run (kill -9 $onport)"
+	fi
+fi
+
+if [ ! -e "Package.swift" ]
+then
+	usage "This command must be run in a directory that contains a Swift package"
+fi
+
+if [ $openbrowser -eq 1 ] 
+then
+	open http://localhost:$port
+fi
+
+# if no command passed in, default to ./build/debug/<dirname>
+if [ "$command" == "" ]
+then
+	command=$default_command
+fi
+
+case "$1" in
+build)
+	echo "Building on Linux"
+	run_docker swift build
+	;;
+run)
+	if [ -f "./$command" ]
+	then
+		echo "Running $2 on Linux"
+		run_docker $command
+	else
+		usage "<command> must point to a command within relative directory (default: $default_command)"
+	fi
+	;;
+debug)
+	if [ -f "./$command" ]
+	then
+		echo "Debugging $2 on Linux"
+		run_docker lldb $command
+	else
+		usage "<command> must point to a command within relative directory (default: $default_command)"
+	fi
+	;;
+*)
+	usage
+esac
