@@ -2,7 +2,6 @@
 
 OPTIND=1         # Reset in case getopts has been used previously in the shell.
 port=8090
-killit=0
 openbrowser=0
 run_command=$2
 default_command=".build/debug/${PWD##*/}"
@@ -13,10 +12,9 @@ function usage() {
 		echo "Usage Error: $1"
 		echo ""
 	fi
-	echo "Usage: $0 [-h|-k|-o] {build | install | run <command>}"
+	echo "Usage: $0 [-h|-o|-p <port>] {build | install | run <command>}"
 	echo "	-h : display options"
 	echo "	-p <port> : port to listen on both locally and in container (default=8090)"
-	echo "	-k : kill any other process listening on local port $port"
 	echo "	-o : open browser on localhost:$port"
 	echo "	     default <command> is $default_command"
 	exit 0
@@ -53,8 +51,6 @@ function run_docker() {
 while getopts "okhp:" opt; do
     case "$opt" in
     o)  openbrowser=1
-        ;;
-    k)  killit=1
         ;;
     p)  port=$OPTARG
         ;;
