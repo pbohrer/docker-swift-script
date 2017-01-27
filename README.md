@@ -1,34 +1,74 @@
 # Dockit
 Script that supports local Swift development and debug with Docker
 
-## Usage
+## Getting Started
+
+### Clone Project
+First you will want to clone the project directory:
 ```
-$ dockit -h
-Usage: ./dockit [-h|-k|-o] {build | install | run <command>}
-	-h : display options
-	-p <port> : port to listen on both locally and in container (default=8090)
-	-k : kill any other process listening on local port 8090
-	-o : open browser on localhost:8090
-	     default <command> is .build/debug/docker-swift-script
+~ $ git clone https://github.com/pbohrer/dockit.git
+Cloning into 'dockit'...
+remote: Counting objects: 14, done.
+remote: Compressing objects: 100% (12/12), done.
+remote: Total 14 (delta 3), reused 13 (delta 2), pack-reused 0
+Unpacking objects: 100% (14/14), done.
+~ $ cd dockit
+dockit $
 ```
 
-## Install
-This command is pretty simple.  It just attempts to create a link from /usr/local/bin/dockit to the local script.
+### Run Install Step
+Now we need to run the install sub-command in the installed script. This command is pretty simple.  It just attempts to create a link from /usr/local/bin/dockit to the local script. In addition, it will pull the docker image needed for local dev/debug in Swift.
 ```
-./dockit install
+dockit $ ./dockit install
 ++ pwd
-+ sudo ln -sf <full-dockit-path>/dockit /usr/local/bin/dockit
-Password:
++ sudo ln -sf /Users/pbohrer/work/swift/docker-swift-script/dockit /usr/local/bin/dockit
++ docker pull ibmcom/swift-ubuntu
+Using default tag: latest
+latest: Pulling from ibmcom/swift-ubuntu
+16da43b30d89: Already exists 
+1840843dafed: Already exists 
+91246eb75b7d: Already exists 
+7faa681b41d7: Already exists 
+97b84c64d426: Already exists 
+a1545d31f6a0: Pull complete 
+acc54fa9ad21: Pull complete 
+5b8a589dad34: Pull complete 
+aacead654d22: Pull complete 
+4209b9a4bd91: Pull complete 
+db4a7e0f6312: Pull complete 
+a53325605dc1: Pull complete 
+95693604b961: Pull complete 
+7f2d4189618e: Pull complete 
+55ebe86dee91: Pull complete 
+623b2896d3d4: Pull complete 
+b33040a2d643: Pull complete 
+97a4d4f4fd28: Pull complete 
+124d6e745607: Pull complete 
+e48951805a91: Pull complete 
+db8e720fc4c5: Pull complete 
+Digest: sha256:5741e4e39aab970cb423d6413a78a226ce308f81fc5ba690c249fe96573ea35c
+Status: Downloaded newer image for ibmcom/swift-ubuntu:latest
 + set +x
+dockit $
 ```
 
-### Dependencies
+### Install Docker Dependency
 If the script does not detect Docker installed, it will prompt you to install it first
 
 ```
 $ dockit
 Install docker on this machine to use this script.
 Go to https://docs.docker.com/docker-for-mac/ for more instructions.
+```
+
+## Usage
+```
+$ dockit -h
+Usage: ./dockit [-h|-o|-p <port>] {build | install | run <command>}
+	-h : display options
+	-p <port> : port to listen on both locally and in container (default=8090)
+	-o : open browser on localhost:8090
+	     default <command> is .build/debug/docker-swift-script
 ```
 
 ## Working Directory
