@@ -49,7 +49,9 @@ fi
 #
 function run_docker() {
 	args="$@"
+	set -x
 	docker run -e "PORT=$port" --privileged --init --rm -i -t -v `pwd`:/root/app -w "/root/app" -p $port:$port $dockerimage $args
+	set +x
 }
 
 while getopts "okhp:" opt; do
@@ -97,9 +99,9 @@ then
 fi
 
 # if no command passed in, default to ./build/debug/<dirname>
-if [ "$command" == "" ]
+if [ "$run_command" == "" ]
 then
-	command=$default_command
+	run_command=$default_command
 fi
 
 case "$1" in
@@ -112,21 +114,21 @@ build)
 	run_docker swift build
 	;;
 run)
-	if [ -f "./$command" ]
+	if [ -f "./$run_command" ]
 	then
 		echo "Running $2 on Linux"
 		echo "  Note: Local port $port is mapping to port $port in container"
 		echo "	      Use -o option to open a browser session to this port or open manually"
-		run_docker $command
+		run_docker $run_command
 	else
-		usage "<command> must point to a command within relative directory (default: $default_command)"
+		usage "<command> ($run_command) must point to a command within relative directory (default: $default_command)"
 	fi
 	;;
 debug)
-	if [ -f "./$command" ]
+	if [ -f "./$run_command" ]
 	then
 		echo "Debugging $2 on Linux"
-		run_docker lldb $command
+		run_docker lldb $run_command
 	else
 		usage "<command> must point to a command within relative directory (default: $default_command)"
 	fi
